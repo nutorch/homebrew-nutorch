@@ -10,6 +10,11 @@ class Nutorch < Formula
   sha256 "a50d68d4ec770b0b742cf07e89c9947597b7989d6be9597c8f183a17bbfd6c21"
   license "Apache-2.0"
 
+  bottle do
+    root_url "https://github.com/nutorch/homebrew-nutorch/releases/download/nutorch-0.1.0"
+    sha256 arm64_tahoe: "82492d3f994068e21a65f437a2d11b54f59de0777d2031d97b5ae2569a4d4b76"
+  end
+
   depends_on "rust" => :build
   depends_on arch: :arm64
   depends_on :macos
