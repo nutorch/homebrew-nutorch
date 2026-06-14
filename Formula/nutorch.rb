@@ -6,14 +6,9 @@
 class Nutorch < Formula
   desc "GPU tensor daemon and CLI for any shell (Apple-silicon MPS, PyTorch-powered)"
   homepage "https://github.com/nutorch/nutorch"
-  url "https://github.com/nutorch/nutorch/releases/download/v0.1.0/nutorch-0.1.0.tar.gz"
-  sha256 "a50d68d4ec770b0b742cf07e89c9947597b7989d6be9597c8f183a17bbfd6c21"
+  url "https://github.com/nutorch/nutorch/releases/download/v1.0.0/nutorch-1.0.0.tar.gz"
+  sha256 "3619bc009757ba89ac79f142ba14583281959d494aa366cc08a094905855483f"
   license "MIT"
-
-  bottle do
-    root_url "https://github.com/nutorch/homebrew-nutorch/releases/download/nutorch-0.1.0"
-    sha256 arm64_tahoe: "82492d3f994068e21a65f437a2d11b54f59de0777d2031d97b5ae2569a4d4b76"
-  end
 
   depends_on "rust" => :build
   depends_on arch: :arm64
@@ -43,6 +38,7 @@ class Nutorch < Formula
     system "cargo", "build", "--release"
 
     bin.install "target/release/torch", "target/release/nutorchd"
+    bin.install_symlink "torch" => "nutorch"
     # The measured dylib closure (issue 0011 exp 1; mirrors
     # scripts/install.sh): libtorch/libtorch_cpu/libc10 are direct @rpath
     # links; libomp is REQUIRED transitively via libtorch_cpu.
@@ -50,13 +46,21 @@ class Nutorch < Formula
       (libexec/"libtorch/lib").install wheel_stage/"torch/lib/#{dylib}"
     end
     pkgshare.install "nutorch.nu"
+    # Zero-config Nushell: nu sources every .nu file in its vendor
+    # autoload dirs, and brew-built nu pins that list to HOMEBREW_PREFIX.
+    # The opt path stays valid across upgrades.
+    (share/"nushell/vendor/autoload/nutorch.nu").write <<~EOS
+      use "#{opt_pkgshare}/nutorch.nu" *
+    EOS
   end
 
   test do
     # GPU-free by design: --version short-circuits before the MPS gate.
     assert_match "nutorch #{version}", shell_output("#{bin}/torch --version")
     assert_match "nutorch #{version}", shell_output("#{bin}/nutorchd --version")
+    assert_match "nutorch #{version}", shell_output("#{bin}/nutorch --version")
     ops = JSON.parse(shell_output("#{bin}/torch ops --json"))
     assert ops.length > 100, "op table suspiciously small"
+    assert_path_exists share/"nushell/vendor/autoload/nutorch.nu"
   end
 end
